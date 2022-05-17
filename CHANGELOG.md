@@ -7,3 +7,17 @@ and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Added
+
+Initial Microsoft Teams Integration.
+
+- Ingest new entity `microsoft_teams_account`
+- Ingest new entity `microsoft_teams_channel`
+- Ingest new entity `microsoft_teams_team`
+- Ingest new entity `microsoft_teams_user`
+
+- Build new relationship `microsoft_teams_account_has_team`
+- Build new relationship `microsoft_teams_account_has_user`
+- Build new relationship `microsoft_teams_team_has_channel`
+- Build new relationship `microsoft_teams_team_has_user`

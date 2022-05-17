@@ -1,4 +1,5 @@
 import { executeStepWithDependencies } from '@jupiterone/integration-sdk-testing';
+
 import { buildStepTestConfigForStep } from '../../../test/config';
 import { Recording, setupProjectRecording } from '../../../test/recording';
 import { Steps } from '../constants';
@@ -8,13 +9,13 @@ afterEach(async () => {
   await recording.stop();
 });
 
-test('fetch-account', async () => {
+test('fetch-users', async () => {
   recording = setupProjectRecording({
     directory: __dirname,
-    name: 'fetch-account',
+    name: 'fetch-users',
   });
 
-  const stepConfig = buildStepTestConfigForStep(Steps.ACCOUNT);
+  const stepConfig = buildStepTestConfigForStep(Steps.USERS);
   const stepResult = await executeStepWithDependencies(stepConfig);
   expect(stepResult).toMatchStepMetadata(stepConfig);
 });

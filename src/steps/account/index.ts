@@ -10,10 +10,15 @@ import { createAccountEntity } from './converter';
 export const ACCOUNT_ENTITY_KEY = 'entity:account';
 
 export async function fetchAccountDetails({
+  instance,
   jobState,
 }: IntegrationStepExecutionContext<IntegrationConfig>) {
-  const accountEntity = await jobState.addEntity(createAccountEntity());
+  const accountEntity = createAccountEntity({
+    clientId: instance.config.clientId,
+    tenantId: instance.config.tenantId,
+  });
 
+  await jobState.addEntity(accountEntity);
   await jobState.setData(ACCOUNT_ENTITY_KEY, accountEntity);
 }
 

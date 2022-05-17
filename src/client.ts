@@ -1,120 +1,189 @@
-import http from 'http';
-
-import { IntegrationProviderAuthenticationError } from '@jupiterone/integration-sdk-core';
+import fetch, { Response } from 'node-fetch';
+import {
+  IntegrationProviderAPIError,
+  IntegrationProviderAuthenticationError,
+} from '@jupiterone/integration-sdk-core';
+import { retry } from '@lifeomic/attempt';
+import { URLSearchParams } from 'url';
 
 import { IntegrationConfig } from './config';
-import { AcmeUser, AcmeGroup } from './types';
+import {
+  MicrosoftTeamsTeam,
+  MicrosoftTeamsChannel,
+  MicrosoftTeamsUser,
+  MicrosoftTeamsTeamMember,
+} from './types';
 
 export type ResourceIteratee<T> = (each: T) => Promise<void> | void;
 
-/**
- * An APIClient maintains authentication state and provides an interface to
- * third party data APIs.
- *
- * It is recommended that integrations wrap provider data APIs to provide a
- * place to handle error responses and implement common patterns for iterating
- * resources.
- */
 export class APIClient {
   constructor(readonly config: IntegrationConfig) {}
 
-  public async verifyAuthentication(): Promise<void> {
-    // TODO make the most light-weight request possible to validate
-    // authentication works with the provided credentials, throw an err if
-    // authentication fails
-    const request = new Promise<void>((resolve, reject) => {
-      http.get(
-        {
-          hostname: 'localhost',
-          port: 443,
-          path: '/api/v1/some/endpoint?limit=1',
-          agent: false,
-          timeout: 10,
+  private baseUri = `https://graph.microsoft.com/v1.0/`;
+  private authUri = `https://login.microsoftonline.com/`;
+  private withBaseUri = (path: string) => `${this.baseUri}${path}`;
+  private withAuthUri = (path: string) => `${this.authUri}${path}`;
+  private perPage = 200;
+  private accessToken;
+
+  private checkStatus = (response: Response) => {
+    if (response.ok) {
+      return response;
+    } else {
+      throw new IntegrationProviderAPIError(response);
+    }
+  };
+
+  private async refreshToken(): Promise<any> {
+    const response = await fetch(
+      this.withAuthUri(`${this.config.tenantId}/oauth2/v2.0/token`),
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        (res) => {
-          if (res.statusCode !== 200) {
-            reject(new Error('Provider authentication failed'));
-          } else {
-            resolve();
-          }
-        },
-      );
-    });
+        body: new URLSearchParams({
+          client_id: `${this.config.clientId}`,
+          client_secret: `${this.config.clientSecret}`,
+          grant_type: 'client_credentials',
+          scope: `https://graph.microsoft.com/.default`,
+        }),
+      },
+    );
+
+    const tokenResponse = await response.json();
+    this.accessToken = tokenResponse.access_token;
+  }
+
+  private async getRequest(endpoint: string, method: 'GET'): Promise<Response> {
+    if (!this.accessToken) {
+      await this.refreshToken();
+    }
 
     try {
-      await request;
+      const options = {
+        method,
+        headers: {
+          'Content-type': 'application/json',
+          Authorization: `Bearer ${this.accessToken}`,
+        },
+      };
+
+      const response = await retry(
+        async () => {
+          const res: Response = await fetch(endpoint, options);
+          this.checkStatus(res);
+          return res;
+        },
+        {
+          delay: 5000,
+          factor: 2,
+          maxAttempts: 5,
+          minDelay: 100,
+          maxDelay: 500,
+          jitter: true,
+          handleError: (err, context) => {
+            if (
+              err.statusCode !== 429 ||
+              ([500, 502, 503].includes(err.statusCode) &&
+                context.attemptNum > 1)
+            ) {
+              context.abort();
+            }
+          },
+        },
+      );
+      return response;
     } catch (err) {
-      throw new IntegrationProviderAuthenticationError({
-        cause: err,
-        endpoint: 'https://localhost/api/v1/some/endpoint?limit=1',
+      throw new IntegrationProviderAPIError({
+        endpoint: endpoint,
         status: err.status,
         statusText: err.statusText,
       });
     }
   }
 
-  /**
-   * Iterates each user resource in the provider.
-   *
-   * @param iteratee receives each resource to produce entities/relationships
-   */
-  public async iterateUsers(
-    iteratee: ResourceIteratee<AcmeUser>,
-  ): Promise<void> {
-    // TODO paginate an endpoint, invoke the iteratee with each record in the
-    // page
-    //
-    // The provider API will hopefully support pagination. Functions like this
-    // should maintain pagination state, and for each page, for each record in
-    // the page, invoke the `ResourceIteratee`. This will encourage a pattern
-    // where each resource is processed and dropped from memory.
-
-    const users: AcmeUser[] = [
-      {
-        id: 'acme-user-1',
-        name: 'User One',
-      },
-      {
-        id: 'acme-user-2',
-        name: 'User Two',
-      },
-    ];
-
-    for (const user of users) {
-      await iteratee(user);
+  public async verifyAuthentication(): Promise<void> {
+    const uri = this.withBaseUri(`users`);
+    try {
+      await this.getRequest(uri, 'GET');
+    } catch (err) {
+      throw new IntegrationProviderAuthenticationError({
+        cause: err,
+        endpoint: uri,
+        status: err.status,
+        statusText: err.statusText,
+      });
     }
   }
 
-  /**
-   * Iterates each group resource in the provider.
-   *
-   * @param iteratee receives each resource to produce entities/relationships
-   */
-  public async iterateGroups(
-    iteratee: ResourceIteratee<AcmeGroup>,
+  private async paginatedRequest<T>(
+    uri: string,
+    method: 'GET',
+    iteratee: ResourceIteratee<T>,
   ): Promise<void> {
-    // TODO paginate an endpoint, invoke the iteratee with each record in the
-    // page
-    //
-    // The provider API will hopefully support pagination. Functions like this
-    // should maintain pagination state, and for each page, for each record in
-    // the page, invoke the `ResourceIteratee`. This will encourage a pattern
-    // where each resource is processed and dropped from memory.
+    let next = uri;
+    do {
+      if (next == 'undefined') {
+        break;
+      }
+      const response = await this.getRequest(next, method);
 
-    const groups: AcmeGroup[] = [
-      {
-        id: 'acme-group-1',
-        name: 'Group One',
-        users: [
-          {
-            id: 'acme-user-1',
-          },
-        ],
-      },
-    ];
+      try {
+        const response_json = await response.json();
+        for (const item of response_json['value']) {
+          await iteratee(item);
+        }
+        next = response_json['@odata.nextLink'];
+      } catch (err) {
+        break;
+      }
+    } while (next);
+  }
 
-    for (const group of groups) {
-      await iteratee(group);
+  public async iterateUsers(
+    iteratee: ResourceIteratee<MicrosoftTeamsUser>,
+  ): Promise<void> {
+    await this.paginatedRequest<MicrosoftTeamsUser>(
+      this.withBaseUri(`users/?$top=${this.perPage}`),
+      'GET',
+      iteratee,
+    );
+  }
+
+  public async iterateTeams(
+    iteratee: ResourceIteratee<MicrosoftTeamsTeam>,
+  ): Promise<void> {
+    await this.paginatedRequest<MicrosoftTeamsTeam>(
+      this.withBaseUri(`groups/?$top=${this.perPage}`),
+      'GET',
+      iteratee,
+    );
+  }
+
+  public async iterateTeamUsers(
+    team_id: string,
+    iteratee: ResourceIteratee<MicrosoftTeamsTeamMember>,
+  ): Promise<void> {
+    await this.paginatedRequest<MicrosoftTeamsTeamMember>(
+      this.withBaseUri(`teams/${team_id}/members/?$top=${this.perPage}`),
+      'GET',
+      iteratee,
+    );
+  }
+
+  public async fetchTeamChannels(
+    team_id: string,
+    iteratee: ResourceIteratee<MicrosoftTeamsChannel>,
+  ): Promise<void> {
+    const response = await this.getRequest(
+      this.withBaseUri(`teams/${team_id}/channels`),
+      'GET',
+    );
+    const response_json = await response.json();
+
+    for (const item of response_json.value) {
+      await iteratee(item);
     }
   }
 }
