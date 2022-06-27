@@ -1,28 +1,33 @@
 # Development
 
-Add details here to give a brief overview of how to work with the provider APIs.
-Please reference any SDKs or API docs used to help build the integration here.
-
-## Prerequisites
-
-Supply details about software or tooling (like maybe Docker or Terraform) that
-is needed for development here.
-
-Please supply references to documentation that details how to install those
-dependencies here.
-
-Tools like Node.js and NPM are already covered in the [README](../README.md) so
-don't bother documenting that here.
+This integration focuses on [Microsoft Teams](https://www.microsoft.com/) and is
+using [Microsoft Graph API](https://graph.microsoft.com/v1.0/) for interacting
+with the Microsoft Teams resources.
 
 ## Provider account setup
 
-Please provide information about the steps needed to create an account with a
-provider. Images and references to a provider's documentation is very helpful
-for new developers picking up your work.
+1. Sign-up for at least a Microsoft 365 Business Standard account
+2. Take note of your provided Microsoft 365 credentials
+3. Sign in at portal.azure.com
+4. Go to app registrations and register for a new app
+5. Take note of client ID and tenant ID
+6. Go to Certificates and Secrets and register a secret for this client.
+7. Go to API permissions.
+8. Add permission for Microsoft Graph (application permission).
+9. Add the following permissions: Group.Read.All - allows getting the teams data
+   TeamMember.Read.All - allows getting all the teams' members' data
+   User.Read.All - allows getting user's data
+10. Grant admin consent for all previously mentioned permissions for your
+    organization
 
 ## Authentication
 
-Supply details here for information on how to authenticate with a provider so
-that developers have an idea of what's needed to hit APIs. It may be useful to
-provide explanations for each value specified in the
-[`IntegrationInstanceConfigFieldMap`](../src/config.ts).
+Provide the `CLIENT_ID`, `CLIENT_SECRET` and the `TENANT_ID` that was provided
+to you after registering an app and creating a secret in portal.azure.com to the
+`.env`. You can use [`.env.example`](../.env.example) as a reference.
+
+The Client ID and Client Secret will be part of the POST request used to
+generate tokens from
+(https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token). The access
+tokens obtained from this endpoint will be used as the Bearer tokens to access
+Microsoft Graph API.

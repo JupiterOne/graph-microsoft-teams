@@ -1,25 +1,45 @@
-// Providers often supply types with their API libraries.
-
-export interface AcmeUser {
+export type MicrosoftTeamsTeam = {
   id: string;
-  name: string;
-}
+  displayName: string;
+  description: string;
+  visibility: string;
+  mail: string;
+  securityEnabled: boolean;
+  mailEnabled: boolean;
+  createdDateTime: string;
+  expirationDateTime: string;
+  deletedDateTime: string;
+  renewedDateTime: string;
+};
 
-export interface AcmeGroup {
+export type MicrosoftTeamsChannel = {
   id: string;
-  name: string;
-  users?: Pick<AcmeUser, 'id'>[];
-}
+  displayName: string;
+  description: string;
+  isFavoriteByDefault: boolean;
+  email: string;
+  membershipType: string;
+  createdDateTime: string;
+  webUrl: string;
+};
 
-// Those can be useful to a degree, but often they're just full of optional
-// values. Understanding the response data may be more reliably accomplished by
-// reviewing the API response recordings produced by testing the wrapper client
-// (./client.ts). However, when there are no types provided, it is necessary to define
-// opaque types for each resource, to communicate the records that are expected
-// to come from an endpoint and are provided to iterating functions.
+export type MicrosoftTeamsUser = {
+  businessPhones: string[];
+  displayName: string;
+  givenName: string;
+  jobTitle: string;
+  mail: string;
+  mobilePhone: string;
+  officeLocation: string;
+  preferredLanguage: string;
+  surname: string;
+  userPrincipalName: string;
+  id: string;
+};
 
-/*
-import { Opaque } from 'type-fest';
-export type AcmeUser = Opaque<any, 'AcmeUser'>;
-export type AcmeGroup = Opaque<any, 'AcmeGroup'>;
-*/
+export type MicrosoftTeamsTeamMember = {
+  displayName: string;
+  userId: string;
+  email: string;
+  tenantId: string;
+};

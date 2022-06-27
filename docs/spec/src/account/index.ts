@@ -1,4 +1,5 @@
 import { StepSpec } from '@jupiterone/integration-sdk-core';
+
 import { IntegrationConfig } from '../../../../src/config';
 
 export const accountSpec: StepSpec<IntegrationConfig>[] = [
@@ -12,7 +13,7 @@ export const accountSpec: StepSpec<IntegrationConfig>[] = [
     entities: [
       {
         resourceName: 'Account',
-        _type: 'acme_account',
+        _type: 'microsoft_teams_account',
         _class: ['Account'],
       },
     ],
