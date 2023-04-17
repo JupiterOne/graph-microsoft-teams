@@ -3,6 +3,7 @@ import {
   Entity,
   IntegrationStep,
   IntegrationStepExecutionContext,
+  IntegrationWarnEventName,
   RelationshipClass,
 } from '@jupiterone/integration-sdk-core';
 
@@ -38,7 +39,7 @@ export async function fetchUsers({
   } catch (err) {
     if (err.status === 403) {
       logger.publishEvent({
-        name: 'missing_permission',
+        name: IntegrationWarnEventName.MissingPermission,
         description:
           '"User.Read.All" is a a required permission to run the Microsoft Teams integration, it is required for getting the user\'s data.',
       });

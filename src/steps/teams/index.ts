@@ -5,6 +5,7 @@ import {
   IntegrationStepExecutionContext,
   RelationshipClass,
   getRawData,
+  IntegrationWarnEventName,
 } from '@jupiterone/integration-sdk-core';
 
 import { createAPIClient } from '../../client';
@@ -44,7 +45,7 @@ export async function fetchTeams({
   } catch (err) {
     if (err.status === 403) {
       logger.publishEvent({
-        name: 'missing_permission',
+        name: IntegrationWarnEventName.MissingPermission,
         description:
           '"Group.Read.All" is not a required permission to run the Microsoft Teams integration, but is required for getting teams data.',
       });
@@ -87,7 +88,7 @@ export async function buildTeamAndUserRelationship({
       } catch (err) {
         if (err.status === 403) {
           logger.publishEvent({
-            name: 'missing_permission',
+            name: IntegrationWarnEventName.MissingPermission,
             description:
               '"TeamMember.Read.All" is not a required permission to run the Microsoft Teams integration, but is required for getting team members data.',
           });
