@@ -1,6 +1,6 @@
 {
   "name": "@jupiterone/graph-microsoft-teams",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "A JupiterOne Integration for ingesting data of the Microsoft Teams",
   "license": "MPL-2.0",
   "main": "src/index.js",
