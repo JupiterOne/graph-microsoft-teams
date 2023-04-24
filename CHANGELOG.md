@@ -8,6 +8,12 @@ and this project adheres to
 
 ## [Unreleased]
 
+## 1.0.1 - 2023-04-17
+
+### Changed
+
+- Updated the log event names to use SDK provided (warn_missing_permission)
+
 ## 1.0.0 - 2022-06-29
 
 ### Added
