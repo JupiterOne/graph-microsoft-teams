@@ -155,7 +155,9 @@ export class APIClient {
     iteratee: ResourceIteratee<MicrosoftTeamsTeam>,
   ): Promise<void> {
     await this.paginatedRequest<MicrosoftTeamsTeam>(
-      this.withBaseUri(`groups/?$top=${this.perPage}`),
+      this.withBaseUri(
+        `groups/?$top=${this.perPage}&$filter=resourceProvisioningOptions/Any(x:x eq 'Team')`,
+      ),
       'GET',
       iteratee,
     );
