@@ -14,6 +14,11 @@ export function setupProjectRecording(
     ...input,
     redactedRequestHeaders: ['Authorization'],
     redactedResponseHeaders: ['set-cookie'],
+    options: {
+      matchRequestsBy: {
+        url: false,
+      },
+    },
     mutateEntry: (entry) => {
       redact(entry);
     },

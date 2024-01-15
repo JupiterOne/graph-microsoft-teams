@@ -20,7 +20,7 @@ export function createUserEntity(user: MicrosoftTeamsUser): Entity {
         _key: getUserKey(user.id),
         id: user.id,
         username: user.displayName,
-        name: user.givenName,
+        name: user.givenName || user.displayName,
         active: true,
         lastname: user.surname,
         jobTitle: user.jobTitle,
