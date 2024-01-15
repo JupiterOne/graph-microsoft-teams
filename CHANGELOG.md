@@ -8,6 +8,13 @@ and this project adheres to
 
 ## [Unreleased]
 
+## 1.0.2 - 2024-01-15
+
+### Changed
+
+- Add filter to fetch groups requests to exclude non 'Teams'
+  resourceProvisioningOptions.
+
 ## 1.0.1 - 2023-04-17
 
 ### Changed
